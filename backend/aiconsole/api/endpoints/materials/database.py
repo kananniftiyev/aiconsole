@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import psycopg2
 from psycopg2 import sql
+from ....app import logger
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(script_dir, '../../../.env'))
@@ -11,7 +12,7 @@ project_root = os.path.abspath(os.path.join(script_dir, '../../../.env'))
 try:
     load_dotenv(dotenv_path=project_root)
 except Exception as e:
-    print(e)
+    logger.error(e)
 
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
@@ -27,7 +28,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def create_database_and_table():
-    print("This function is called to create the database and table.")
 
     conn = psycopg2.connect(
         dbname="postgres",
@@ -46,16 +46,15 @@ def create_database_and_table():
     db_exists = cursor.fetchone()
 
     if db_exists:
-        print(f"Database '{DB_NAME}' already exists. Skipping creation.")
+        logger.info(f"Database '{DB_NAME}' already exists. Skipping creation.")
         cursor.close()
         conn.close()
         return
 
-    # Create a new database if it doesn't exist
     cursor.execute(sql.SQL("CREATE DATABASE {}").format(
         sql.Identifier(DB_NAME)
     ))
-    print(f"Database '{DB_NAME}' created successfully.")
+    logger.info(f"Database '{DB_NAME}' created successfully.")
 
     cursor.close()
     conn.close()
@@ -100,7 +99,7 @@ def create_database_and_table():
             );
         """)
 
-        print(f"Table 'materials' created successfully.")
+        logger.info(f"Table 'materials' created successfully.")
         conn.commit()
 
 
@@ -108,7 +107,7 @@ def create_database_and_table():
         conn.commit()
     except Exception as e:
         conn.rollback()
-        print(f"Error creating table: {e}")
+        logger.error(f"Table 'materials' created successfully.")
     finally:
         cursor.close()
         conn.close()

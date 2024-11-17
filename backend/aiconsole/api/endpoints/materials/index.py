@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from typing import List
 
 from fastapi import APIRouter, HTTPException
@@ -22,7 +23,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from .database import SessionLocal
 from .models import Material
-from .schemas import MaterialOut  # Ensure this schema includes all fields
+from .schemas import MaterialOut
 
 router = APIRouter()
 

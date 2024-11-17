@@ -37,7 +37,6 @@ if "BE_SENTRY_DSN" in os.environ:
 config.dictConfig(log_config)
 logger = getLogger(__name__)
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings().configure(SettingsFileStorage(project_path=get_project_directory_safe()))

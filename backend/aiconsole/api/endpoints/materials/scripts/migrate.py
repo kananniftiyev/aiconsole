@@ -1,29 +1,33 @@
 from pathlib import Path
 import toml
 import requests
+from .....app import logger
+
+# TODO: Fix comma issue.
+# TODO: Code Cleaning
 
 
 def load_toml_files(directory: str):
     absolute_directory = Path(directory).resolve()
-    print(f"Searching for TOML files in: {absolute_directory}")
+    logger.info(f"Searching for TOML files in: {absolute_directory}")
 
     toml_data = []
     toml_files_found = list(Path(directory).glob('*.toml'))
 
     if not toml_files_found:
-        print("No TOML files found in the directory.")
+        logger.warning("No TOML files found in the directory.")
         return toml_data
 
     for toml_file in toml_files_found:
         try:
             with open(toml_file, 'r') as file:
                 data = toml.load(file)
-                print(f"Loaded data from {toml_file.name}: {data}")
+                logger.info(f"Loaded data from {toml_file.name}: {data}")
                 toml_data.append(data)
         except toml.TomlDecodeError as e:
-            print(f"Error decoding TOML file {toml_file.name}: {e}")
+            logger.error(f"Error decoding TOML file {toml_file.name}: {e}")
         except Exception as e:
-            print(f"Error reading TOML file {toml_file.name}: {e}")
+            logger.error(f"Error reading TOML file {toml_file.name}: {e}")
 
     return toml_data
 
@@ -39,7 +43,7 @@ def read_content_from_python_file(base_path: Path, file_name: str) -> str:
         with open(file_path, 'r') as file:
             content = file.read()
     except Exception as e:
-        print(f"Error reading Python file {file_path}: {e}")
+        logger.error(f"Error reading Python file {file_path}: {e}")
     return content
 
 def transform_toml_to_db_data(toml_data, base_directory: Path):
@@ -78,21 +82,21 @@ def post_data_to_api(data, api_base_url):
             url = f"{api_base_url}/api/materials/{asset_id}"
             response = requests.post(url, json=item, headers=headers)
             response.raise_for_status()
-            print(f"Successfully posted data to {url}")
+            logger.info(f"Successfully posted data to {url}")
         except requests.exceptions.RequestException as e:
-            print(f"Error posting data to API at {url}: {e}")
+            logger.error(f"Error posting data to API at {url}: {e}")
 
 def main():
     toml_directory = '../../../../../aiconsole/preinstalled/materials/'
     toml_files = load_toml_files(toml_directory)
 
     if not toml_files:
-        print("No TOML files were processed.")
+        logger.info("No TOML files were processed.")
         return
 
     api_base_url = "http://127.0.0.1:8000"
 
-    print("Processing TOML files...")
+    logger.info("Processing TOML files...")
 
     base_directory = Path(toml_directory).resolve()
     transformed_data = transform_toml_to_db_data(toml_files, base_directory)
