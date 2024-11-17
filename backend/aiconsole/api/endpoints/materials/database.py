@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 import os
 import psycopg2
 from psycopg2 import sql
-from ....app import logger
+import logging
+
+_log = logging.getLogger(__name__)
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(script_dir, '../../../.env'))

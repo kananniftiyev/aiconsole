@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from .crud import create_material, get_material, update_material, delete_material
 from .database import SessionLocal
 from .schemas import MaterialCreate, MaterialUpdate, MaterialOut
+from .scripts.migrate import main
 
 router = APIRouter()
 
@@ -59,7 +60,6 @@ async def get_material_endpoint(asset_id: str, db: Session = Depends(get_db)):
     - **Response model**: `MaterialOut`
     - **404 error**: Material not found.
     """
-    print(asset_id)
     sanitized_asset_id = sanitize_asset_id(asset_id)
     material = get_material(db, sanitized_asset_id)
     if not material:
@@ -99,6 +99,7 @@ async def delete_material_endpoint(asset_id: str, db: Session = Depends(get_db))
     return {"status": "ok"}
 
 
-@router.post("/migrate", response_model=dict)
+@router.get("/migrate/",)
 async def run_migration():
-    pass
+    main()
+    return {"status": "success"}
