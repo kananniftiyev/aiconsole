@@ -14,17 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from .crud import create_material, get_material, update_material, delete_material
 from .database import SessionLocal
 from .schemas import MaterialCreate, MaterialUpdate, MaterialOut
+from .models import Material
 from .scripts.migrate import main
 
 router = APIRouter()
 
-# TODO: Material Status Change endpoint.
-# TODO: Material Exists endpoint.
 # ! Project Structure fix.
 
 def get_db():
@@ -83,6 +82,28 @@ async def update_material_endpoint(asset_id: str, material: MaterialUpdate, db: 
         raise HTTPException(status_code=404, detail="Material not found")
     return updated_material
 
+@router.post("/{asset_id}/status-change")
+async def material_status_change(asset_id: str, db: Session = Depends(get_db)):
+    sanitized_asset_id = sanitize_asset_id(asset_id)
+    db_material = db.query(Material).filter(Material.id == sanitized_asset_id).first()      
+    if db_material:
+        # Toggle the status between 'enabled' and 'disabled'
+        new_status = "disabled" if db_material.status == "enabled" else "enabled"
+        updated_material = update_material(db, sanitized_asset_id, {"status": new_status})
+        
+        return {"message": f"Material status toggled to {new_status}", "material": updated_material}
+    else:
+        return {"error": "Material not found"}, 404
+    
+@router.get("/{asset_id}/exists")
+async def material_exists(asset_id: str, db: Session = Depends(get_db)):
+    sanitized_asset_id = sanitize_asset_id(asset_id)
+    material = get_material(db, sanitized_asset_id)
+    if not material:
+        raise HTTPException(status_code=404, detail="Material does not exists")
+    
+    return {"status": f"Material '{material.name}' does exists"}
+
 @router.delete("/{asset_id}", response_model=dict)
 async def delete_material_endpoint(asset_id: str, db: Session = Depends(get_db)):
     """
@@ -100,6 +121,6 @@ async def delete_material_endpoint(asset_id: str, db: Session = Depends(get_db))
 
 
 @router.get("/migrate/",)
-async def run_migration():
-    main()
+async def run_migration(background_tasks: BackgroundTasks):
+    background_tasks.add_task(main)
     return {"status": "success"}

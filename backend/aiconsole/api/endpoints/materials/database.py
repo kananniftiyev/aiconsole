@@ -14,7 +14,7 @@ project_root = os.path.abspath(os.path.join(script_dir, '../../../.env'))
 try:
     load_dotenv(dotenv_path=project_root)
 except Exception as e:
-    logger.error(e)
+    _log.error(e)
 
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
@@ -48,7 +48,7 @@ def create_database_and_table():
     db_exists = cursor.fetchone()
 
     if db_exists:
-        logger.info(f"Database '{DB_NAME}' already exists. Skipping creation.")
+        _log.info(f"Database '{DB_NAME}' already exists. Skipping creation.")
         cursor.close()
         conn.close()
         return
@@ -56,7 +56,7 @@ def create_database_and_table():
     cursor.execute(sql.SQL("CREATE DATABASE {}").format(
         sql.Identifier(DB_NAME)
     ))
-    logger.info(f"Database '{DB_NAME}' created successfully.")
+    _log.info(f"Database '{DB_NAME}' created successfully.")
 
     cursor.close()
     conn.close()
@@ -101,7 +101,7 @@ def create_database_and_table():
             );
         """)
 
-        logger.info(f"Table 'materials' created successfully.")
+        _log.info(f"Table 'materials' created successfully.")
         conn.commit()
 
 
@@ -109,7 +109,7 @@ def create_database_and_table():
         conn.commit()
     except Exception as e:
         conn.rollback()
-        logger.error(f"Table 'materials' created successfully.")
+        _log.error(f"Table 'materials' created successfully.")
     finally:
         cursor.close()
         conn.close()

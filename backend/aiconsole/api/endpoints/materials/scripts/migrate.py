@@ -2,12 +2,31 @@ from pathlib import Path
 import toml
 import requests
 import logging
+import black
+import json
 
-# TODO: Fix comma issue.
 # TODO: Code Cleaning
 
 _log = logging.getLogger(__name__)
 
+def format_python_code(code: str) -> str:
+    """Formats Python code using the Black formatter."""
+    try:
+        formatted_code = black.format_str(code, mode=black.Mode())
+        return formatted_code
+    except black.InvalidInput as e:
+        _log.error(f"Failed to format Python code: {e}")
+        return code  # Return the original code if formatting fails
+
+def find_preinstalled_materials_folder(start_path: Path, folder_name: str = 'materials') -> Path:
+    """Search for the materials folder under preinstalled, two or three levels above the current file."""
+    for level in [2, 3]:  # Check 2 and 3 levels up
+        potential_path = start_path.parents[level] / 'preinstalled' / folder_name
+        if potential_path.is_dir():
+            _log.info(f"Found materials folder at: {potential_path}")
+            return potential_path
+    _log.error(f"No '{folder_name}' folder found under 'preinstalled' within 2-3 levels above.")
+    return None
 
 def load_toml_files(directory: str):
     absolute_directory = Path(directory).resolve()
@@ -24,7 +43,6 @@ def load_toml_files(directory: str):
         try:
             with open(toml_file, 'r') as file:
                 data = toml.load(file)
-                _log.info(f"Loaded data from {toml_file.name}: {data}")
                 toml_data.append(data)
         except toml.TomlDecodeError as e:
             _log.error(f"Error decoding TOML file {toml_file.name}: {e}")
@@ -54,8 +72,9 @@ def transform_toml_to_db_data(toml_data, base_directory: Path):
         content_file = clean_file_path(item.get("content", ""))
         if content_file and Path(content_file).suffix == '.py':
             content = read_content_from_python_file(base_directory, content_file)
+            formatted_content = format_python_code(content)  # Format Python code
         else:
-            content = item.get("content", "")
+            formatted_content = item.get("content", "")
 
         item_id = str(index)
         material_data = {
@@ -70,7 +89,7 @@ def transform_toml_to_db_data(toml_data, base_directory: Path):
             "status": item.get("status", "enabled"),
             "override": item.get("override", True),
             "content_type": item.get("content_type", "static_text"),
-            "content": content,
+            "content": formatted_content,  # Use formatted content
             "content_static_text": item.get("content_static_text", None)
         }
         db_data.append(material_data)
@@ -89,8 +108,14 @@ def post_data_to_api(data, api_base_url):
             _log.error(f"Error posting data to API at {url}: {e}")
 
 def main():
-    toml_directory = '../../../../../aiconsole/preinstalled/materials/'
-    toml_files = load_toml_files(toml_directory)
+    start_path = Path(__file__).resolve().parent
+    materials_folder = find_preinstalled_materials_folder(start_path)
+
+    if not materials_folder:
+        _log.error("Materials folder not found. Exiting.")
+        return
+    
+    toml_files = load_toml_files(materials_folder)
 
     if not toml_files:
         _log.info("No TOML files were processed.")
@@ -100,7 +125,7 @@ def main():
 
     _log.info("Processing TOML files...")
 
-    base_directory = Path(toml_directory).resolve()
+    base_directory = Path(materials_folder).resolve()
     transformed_data = transform_toml_to_db_data(toml_files, base_directory)
 
     post_data_to_api(transformed_data, api_base_url)

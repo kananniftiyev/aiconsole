@@ -35,7 +35,6 @@ def run_aiconsole(dev: bool):
     except Exception as e:
         print(e)
 
-    create_database_and_table()
 
     parser = argparse.ArgumentParser(description="Start the backend server.")
     parser.add_argument("--port", type=int, help="Port to listen on.", default=8000)
@@ -49,6 +48,8 @@ def run_aiconsole(dev: bool):
     port = parser.parse_args().port
     origin = parser.parse_args().origin
     os.environ["CORS_ORIGIN"] = origin
+    
+    create_database_and_table()
 
     try:
         run(
@@ -60,6 +61,8 @@ def run_aiconsole(dev: bool):
         )
     except KeyboardInterrupt:
         _log.info("Exiting ...")
+    
+
 
 
 def aiconsole_dev():
