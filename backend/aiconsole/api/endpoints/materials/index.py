@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from .database import SessionLocal
-from .models import Material
+from .database import Material
 from .schemas import MaterialOut
 
 router = APIRouter()

@@ -2,8 +2,7 @@
 This file provides CRUD (Create, Read, Update, Delete) operations for the `Material` model using SQLAlchemy.
 """
 from sqlalchemy.orm import Session
-from .models import Material
-from .database import SessionLocal
+from .database import SessionLocal, Material
 
 def create_material(db: Session, material_data: dict):
     db_material = Material(**material_data)

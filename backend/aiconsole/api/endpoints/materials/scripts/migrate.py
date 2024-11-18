@@ -3,9 +3,6 @@ import toml
 import requests
 import logging
 import black
-import json
-
-# TODO: Code Cleaning
 
 _log = logging.getLogger(__name__)
 
@@ -16,11 +13,11 @@ def format_python_code(code: str) -> str:
         return formatted_code
     except black.InvalidInput as e:
         _log.error(f"Failed to format Python code: {e}")
-        return code  # Return the original code if formatting fails
+        return code  
 
 def find_preinstalled_materials_folder(start_path: Path, folder_name: str = 'materials') -> Path:
     """Search for the materials folder under preinstalled, two or three levels above the current file."""
-    for level in [2, 3]:  # Check 2 and 3 levels up
+    for level in [2, 3]:  
         potential_path = start_path.parents[level] / 'preinstalled' / folder_name
         if potential_path.is_dir():
             _log.info(f"Found materials folder at: {potential_path}")
@@ -72,7 +69,7 @@ def transform_toml_to_db_data(toml_data, base_directory: Path):
         content_file = clean_file_path(item.get("content", ""))
         if content_file and Path(content_file).suffix == '.py':
             content = read_content_from_python_file(base_directory, content_file)
-            formatted_content = format_python_code(content)  # Format Python code
+            formatted_content = format_python_code(content)  
         else:
             formatted_content = item.get("content", "")
 
@@ -89,7 +86,7 @@ def transform_toml_to_db_data(toml_data, base_directory: Path):
             "status": item.get("status", "enabled"),
             "override": item.get("override", True),
             "content_type": item.get("content_type", "static_text"),
-            "content": formatted_content,  # Use formatted content
+            "content": formatted_content, 
             "content_static_text": item.get("content_static_text", None)
         }
         db_data.append(material_data)
@@ -97,15 +94,30 @@ def transform_toml_to_db_data(toml_data, base_directory: Path):
 
 def post_data_to_api(data, api_base_url):
     headers = {'Content-Type': 'application/json'}
-    for item in data:
-        try:
-            asset_id = item['id']
-            url = f"{api_base_url}/api/materials/{asset_id}"
+    
+    try:
+        check_url = f"{api_base_url}/api/materials/"
+        check_response = requests.get(check_url, headers=headers)
+        check_response.raise_for_status()
+        
+        existing_materials = check_response.json()
+        
+        for item in data:
+            material_name = item['name']
+            
+            material_exists = any(existing_item['name'] == material_name for existing_item in existing_materials)
+            
+            if material_exists:
+                _log.info(f"Material with name '{material_name}' already exists. Skipping post.")
+                continue  
+            
+            url = f"{api_base_url}/api/materials/{item['id']}"
             response = requests.post(url, json=item, headers=headers)
             response.raise_for_status()
             _log.info(f"Successfully posted data to {url}")
-        except requests.exceptions.RequestException as e:
-            _log.error(f"Error posting data to API at {url}: {e}")
+    
+    except requests.exceptions.RequestException as e:
+        _log.error(f"Error posting data to API: {e}")
 
 def main():
     start_path = Path(__file__).resolve().parent

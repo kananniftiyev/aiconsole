@@ -17,14 +17,11 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from .crud import create_material, get_material, update_material, delete_material
-from .database import SessionLocal
+from .database import SessionLocal, Material
 from .schemas import MaterialCreate, MaterialUpdate, MaterialOut
-from .models import Material
 from .scripts.migrate import main
 
 router = APIRouter()
-
-# ! Project Structure fix.
 
 def get_db():
     db = SessionLocal()
